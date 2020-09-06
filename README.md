@@ -1,4 +1,3 @@
-# steam-auto-accept-gift-trade-offers
 # use at your own risk, i don't take responsibility about trade bans.
 
 # Install
