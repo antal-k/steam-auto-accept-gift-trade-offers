@@ -2,7 +2,12 @@ const prompt = require('prompt'),
     fs = require('fs'),
     SteamCommunity = require('steamcommunity'),
     TradeOfferManager = require('steam-tradeoffer-manager'),
-    steam = new SteamCommunity();
+    steam = new SteamCommunity(),
+    util = require('util'),
+    globalConfig = require('./config.json'),
+    request = require('request'),
+    dateFormat = require('date-format'),
+    Push = require('pushover-notifications');
 
 
 let manager = new TradeOfferManager({
@@ -36,21 +41,23 @@ getConfig().then(config => {
 
 function getConfig() {
     return new Promise((resolve, reject) => {
-        const properties = [
-            {
+        const properties = [];
+        if(globalConfig.steamUsername === '') {
+            properties.push({
                 name: 'username',
                 warning: 'Username must be only letters, spaces, or dashes'
-            },
-            {
+            });
+        }
+        if(globalConfig.steamPassword === '') {
+            properties.push({
                 name: 'password',
                 hidden: true
-            },
-            {
-                name: 'twofactor',
-                hidden: true
-            }
-        ];
-
+            });
+        }
+        properties.push({
+            name: 'twofactor',
+            hidden: true
+        });
         prompt.start();
 
         prompt.get(properties, function (err, result) {
@@ -65,8 +72,8 @@ function getConfig() {
 function steamLogin(config) {
     return new Promise((resolve, reject) => {
         const logOnOptions = {
-            "accountName": config.username,
-            "password": config.password,
+            "accountName": globalConfig.steamUsername ? globalConfig.steamUsername : config.username,
+            "password": globalConfig.steamPassword ? globalConfig.steamPassword : config.password,
             "twoFactorCode": config.twofactor
         };
         if (fs.existsSync('steamguard.txt')) {
@@ -92,4 +99,65 @@ function steamLogin(config) {
             });
         });
     });
+}
+
+steam.on('sessionExpired', function (err) {
+    console.log('Session expired.');
+});
+
+let pushoverClient = undefined;
+if (globalConfig.pushoverUser) {
+    pushoverClient = new Push({
+        user: globalConfig.pushoverUser,
+        token: globalConfig.pushoverToken,
+    });
+    pushoverClient.send({
+        message: 'Bot Initialized',
+        title: '[STEAM] Auto-accept',
+    }, (err, result) => {
+        if (err) {
+            throw err;
+        }
+    });
+}
+
+const colors = {
+    FgBlack: "\x1b[30m",
+    FgRed: "\x1b[31m",
+    FgGreen: "\x1b[32m",
+    FgYellow: "\x1b[33m",
+    FgBlue: "\x1b[34m",
+    FgMagenta: "\x1b[35m",
+    FgCyan: "\x1b[36m",
+    FgWhite: "\x1b[37m",
+};
+const log = console.log;
+
+console.log = function (d, dc = false, color = '\x1b[0m') {
+    log(color + "[" + dateFormat(new Date(), "yyyy-mm-dd H:MM:ss") + "] " + util.format(d));
+};
+
+function sendMessage(msg) {
+    if (globalConfig.discordHook) {
+        request({
+            url: globalConfig.discordHook,
+            method: 'POST',
+            json: true,
+            body: {
+                content: msg,
+            },
+        }, (error, response, b) => {
+            //
+        });
+    }
+    if (globalConfig.pushoverUser) {
+        pushoverClient.send({
+            message: msg,
+            title: '[STEAM] Auto-accept',
+        }, (err, result) => {
+            if (err) {
+                throw err;
+            }
+        });
+    }
 }
