@@ -20,9 +20,13 @@ manager.on('newOffer', function (offer) {
     if (offer.itemsToGive.length > 0) {
         //
     } else {
+        const itemNames = [];
+        for (var key in offer.itemsToReceive) {
+            itemNames.push(offer.itemsToReceive[key].market_hash_name);
+        }
         offer.accept(function (err) {
             if (!err) {
-                console.log(`#${offer.id} accepted.`);
+                console.log(`#${offer.id} accepted. | ${itemNames.join(', ')}`, true);
             }
         });
     }
@@ -42,13 +46,13 @@ getConfig().then(config => {
 function getConfig() {
     return new Promise((resolve, reject) => {
         const properties = [];
-        if(globalConfig.steamUsername === '') {
+        if (globalConfig.steamUsername === '') {
             properties.push({
                 name: 'username',
                 warning: 'Username must be only letters, spaces, or dashes'
             });
         }
-        if(globalConfig.steamPassword === '') {
+        if (globalConfig.steamPassword === '') {
             properties.push({
                 name: 'password',
                 hidden: true
@@ -102,7 +106,7 @@ function steamLogin(config) {
 }
 
 steam.on('sessionExpired', function (err) {
-    console.log('Session expired.');
+    console.log('Session expired.', true);
 });
 
 let pushoverClient = undefined;
@@ -135,6 +139,9 @@ const log = console.log;
 
 console.log = function (d, dc = false, color = '\x1b[0m') {
     log(color + "[" + dateFormat(new Date(), "yyyy-mm-dd H:MM:ss") + "] " + util.format(d));
+    if (dc) {
+        sendMessage(d);
+    }
 };
 
 function sendMessage(msg) {
