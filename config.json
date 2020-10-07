@@ -3,5 +3,6 @@
     "pushoverToken": "",
     "discordHook": "",
     "steamUsername": "",
-    "steamPassword": ""
+    "steamPassword": "",
+    "steamSharedSecret": ""
 }

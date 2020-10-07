@@ -13,6 +13,7 @@
     "prompt": "^1.0.0",
     "pushover-notifications": "^1.2.2",
     "request": "^2.88.2",
+    "steam-totp": "^2.1.1",
     "steam-tradeoffer-manager": "^2.10.2",
     "steamcommunity": "^3.41.6",
     "util": "^0.12.3"

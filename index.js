@@ -2,6 +2,7 @@ const prompt = require('prompt'),
     fs = require('fs'),
     SteamCommunity = require('steamcommunity'),
     TradeOfferManager = require('steam-tradeoffer-manager'),
+    SteamTotp = require('steam-totp'),
     steam = new SteamCommunity(),
     util = require('util'),
     globalConfig = require('./config.json'),
@@ -58,10 +59,12 @@ function getConfig() {
                 hidden: true
             });
         }
-        properties.push({
-            name: 'twofactor',
-            hidden: true
-        });
+        if (globalConfig.steamSharedSecret === '') {
+            properties.push({
+                name: 'twofactor',
+                hidden: true
+            });
+        }
         prompt.start();
 
         prompt.get(properties, function (err, result) {
@@ -78,7 +81,7 @@ function steamLogin(config) {
         const logOnOptions = {
             "accountName": globalConfig.steamUsername ? globalConfig.steamUsername : config.username,
             "password": globalConfig.steamPassword ? globalConfig.steamPassword : config.password,
-            "twoFactorCode": config.twofactor
+            "twoFactorCode": globalConfig.steamSharedSecret ? SteamTotp.getAuthCode(globalConfig.steamSharedSecret) : config.twofactor
         };
         if (fs.existsSync('steamguard.txt')) {
             logOnOptions.steamguard = fs.readFileSync('steamguard.txt').toString('utf8');
